@@ -1,72 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
-
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard</title>
 
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
-            background: #f2f2f2;
-            padding: 30px;
+            margin: 40px;
+            background: #f5f5f5;
         }
 
         .container {
             max-width: 1000px;
             margin: auto;
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         h1 {
-            text-align: center;
+            margin-bottom: 20px;
         }
 
         .logout {
-            display: block;
-            width: 100px;
-            margin: 20px auto;
-            padding: 10px;
-            text-align: center;
-            background: #222;
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #dc3545;
             color: white;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 5px;
+        }
+
+        .logout:hover {
+            background: #b02a37;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
-        th, td {
-            padding: 12px;
+        th,
+        td {
             border: 1px solid #ddd;
+            padding: 12px;
             text-align: left;
         }
 
         th {
-            background: #eee;
+            background: #f0f0f0;
         }
 
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
 
-            .container {
-                padding: 15px;
-                overflow-x: auto;
-            }
-
-            table {
-                min-width: 600px;
-            }
+        .code {
+            font-family: monospace;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -77,27 +73,56 @@
 
     <h1>ADMIN DASHBOARD</h1>
 
-    <a class="logout" href="/admin/logout">LOGOUT</a>
+    <a class="logout" href="{{ url_for('admin_logout') }}">
+        LOGOUT
+    </a>
 
     <table>
 
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Code</th>
-            <th>Submitted At</th>
-        </tr>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Submitted At</th>
+            </tr>
+        </thead>
 
-        {% for submission in submissions %}
+        <tbody>
 
-        <tr>
-            <td>{{ submission[0] }}</td>
-            <td>{{ submission[1] }}</td>
-            <td>{{ submission[2] }}</td>
-            <td>{{ submission[3] }}</td>
-        </tr>
+            {% for submission in submissions %}
 
-        {% endfor %}
+            <tr>
+
+                <td>
+                    {{ submission["_id"] }}
+                </td>
+
+                <td>
+                    {{ submission.get("name", "") }}
+                </td>
+
+                <td class="code">
+                    {{ submission.get("code", "") }}
+                </td>
+
+                <td>
+                    {{ submission.get("submitted_at", "") }}
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="4">
+                    No submissions found.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
 
     </table>
 

@@ -1,61 +1,69 @@
 from flask import Flask, request, render_template, redirect, url_for, session
-import mysql.connector
+from pymongo import MongoClient
 from functools import wraps
+from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-# Change this to a long random secret before putting the website online
-app.secret_key = "change-this-to-a-random-secret-key"
+# ---------------- SECURITY SETTINGS ----------------
 
-# Admin login
-ADMIN_USERNAME = "ASHWAK"
-ADMIN_PASSWORD = "EXAM"
+app.secret_key = os.getenv("SECRET_KEY")
+
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 
-def get_database_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="ASHWAK",
-        database="code_receiver"
-    )
+# ---------------- MONGODB CONNECTION ----------------
+
+MONGO_URI = os.getenv("MONGO_URI")
+
+mongo_client = MongoClient(MONGO_URI)
+
+database = mongo_client["code_receiver"]
+
+submissions_collection = database["submissions"]
 
 
 # ---------------- PUBLIC PAGE ----------------
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+
     message = ""
 
     if request.method == "POST":
+
         name = request.form.get("name", "").strip()
         code = request.form.get("code", "").strip()
 
         if name and code:
-            connection = get_database_connection()
-            cursor = connection.cursor()
 
-            cursor.execute(
-                "INSERT INTO submissions (name, code) VALUES (%s, %s)",
-                (name, code)
-            )
-
-            connection.commit()
-
-            cursor.close()
-            connection.close()
+            submissions_collection.insert_one({
+                "name": name,
+                "code": code,
+                "submitted_at": datetime.now(timezone.utc)
+            })
 
             message = "Code sent successfully!"
 
         else:
+
             message = "Please enter your name and code."
 
-    return render_template("index.html", message=message)
+    return render_template(
+        "index.html",
+        message=message
+    )
 
 
 # ---------------- ADMIN PROTECTION ----------------
 
 def admin_required(function):
+
     @wraps(function)
     def decorated_function(*args, **kwargs):
 
@@ -89,6 +97,7 @@ def admin_login():
             return redirect(url_for("admin_dashboard"))
 
         else:
+
             error = "Invalid username or password."
 
     return render_template(
@@ -103,19 +112,7 @@ def admin_login():
 @admin_required
 def admin_dashboard():
 
-    connection = get_database_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT id, name, code, submitted_at
-        FROM submissions
-        ORDER BY id DESC
-    """)
-
-    submissions = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
+    submissions = submissions_collection.find().sort("_id", -1)
 
     return render_template(
         "admin_dashboard.html",
